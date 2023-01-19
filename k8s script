@@ -1,0 +1,47 @@
+#!/bin/bash
+apt update
+apt install apt-transport-https ca-certificates curl software-properties-common -y
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+add-apt-repository “deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable”
+
+apt update
+sudo apt install docker.io -y
+#apt-cache policy docker-ce
+#apt install docker-ce -y
+
+curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/kubernetes.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/kubernetes.gpg] http://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee -a /etc/apt/sources.list
+#curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add
+#echo “deb https://packages.cloud.google.com/apt kubernetes-xenial main” > /etc/apt/sources.list.d/kurbenetes.list
+
+swapoff -a
+
+apt update
+apt install kubelet=1.24.0-00 kubeadm=1.24.0-00 kubectl=1.24.0-00 -y
+apt-mark hold kubelet kubeadm kubectl
+
+#export ipaddr=`curl -4 icanhazip.com`
+#export ipaddr=`ip address|grep eth0|grep inet|awk -F ‘ ‘ ‘{print $2}’ |awk -F ‘\/’ ‘{print $1}’`
+
+kubeadm init
+#kubeadm init --apiserver-advertise-address=$ipaddr --pod-network-cidr=172.16.0.0/16
+
+su ubuntu
+mkdir -p $HOME/.kube
+echo $HOME/.kube
+touch $HOME/clusterjoin.sh
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+cat $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+#kubectl apply -f https://docs.projectcalico.org/manifests/calico-typha.yaml
+#kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.24.5/manifests/custom-resources.yaml
+#kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+#kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
+
+#kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+#curl -o /root/kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+#kubectl --kubeconfig /root/.kube/config apply -f /root/kube-flannel.yml
+
+kubeadm token create --print-join-command > /home/ubuntu/clusterjoin.sh
+sudo snap install helm --classic
